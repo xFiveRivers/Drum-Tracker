@@ -18,8 +18,8 @@ class DrumTracker():
         # Define class map for prediction and midi mapping
         self.class_map = {
             0 : ['snare', 71],
-            1 : ['hat', 70],
-            2 : ['kick', 72]
+            1 : ['hat', 72],
+            2 : ['kick', 70]
         }
     
 
