@@ -7,13 +7,9 @@ import torchaudio.transforms as T
 
 
 class DrumTracker():
-    def __init__(self, loop_path: str):
-        # Load in drum loop
-        self.loop, self.loop_rate = librosa.load(loop_path, sr=None)
-
-        # Initialize models and functions
+    def __init__(self):
+        # Initialize model
         self._init_model()
-        self._init_funcs()
 
         # Define class map for prediction and midi mapping
         self.class_map = {
@@ -24,13 +20,27 @@ class DrumTracker():
     
 
     def get_midi(self):
-        oenv, onsets = self._detect_onsets()
+        # Get loop file location from user
+        loop_path = input('Enter the path to the drum loop:')
+
+        # Load in drum loop
+        self.loop, self.loop_rate = librosa.load(loop_path, sr=None)
+
+        # Initialize functions
+        self._init_funcs()
+
+        # Extract chops
+        self.oenv, onsets = self._detect_onsets()
         self.chop_dict = self._extract_chops(onsets)
 
+        # Get prediction of each chop
         for chop in self.chop_dict['chops']:
             map_value = self.class_map[self._predict_chop(chop)]
             self.chop_dict['labels'].append(map_value[0])
             self.chop_dict['notes'].append(map_value[1])
+        
+        # Create midi transcription and file
+        self._transcribe_midi()
 
 
     def _init_model(self):
@@ -66,6 +76,7 @@ class DrumTracker():
             hop_length = 256 // 8,
             n_mels = 256
         )
+        self.midi = MIDIFile(1)
 
 
     def _detect_onsets(self) -> tuple[np.ndarray, np.ndarray]:
@@ -232,3 +243,32 @@ class DrumTracker():
         signal_db = power_to_db(signal)
 
         return(round(float(torch.mean(signal_db.squeeze(0))), 4))
+    
+
+    def _transcribe_midi(self):
+        """Transcribes and creates a MIDI file.
+        """
+        file_path = input('Enter the desired path of the ouptut midi file:')
+
+        if input('Do you know the tempo (bpm) of the loop? [yes/no]') == 'yes':
+            bpm = int(input('Please enter the bpm:'))
+        else:
+            bpm = int(librosa.beat.tempo(
+                y = self.loop,
+                sr = self.loop_rate,
+                onset_envelope = self.oenv,
+                start_bpm = 85
+            )[0])
+            print(f'Tempo autodetected as {bpm}bpm.')
+
+        track, channel, time, duration, volume = 0, 0, 0, 0.25, 100
+        self.midi.addTempo(track, time, bpm)
+
+        for i, note in enumerate(self.chop_dict['notes']):
+            q_time = (1 / 60) * bpm * self.chop_dict['times'][i]
+            self.midi.addNote(track, channel, note, q_time, duration, volume)
+
+        with open(file_path, 'wb') as out_file:
+            self.midi.writeFile(out_file)
+
+        print(f'Midi file saved to {file_path}.')
