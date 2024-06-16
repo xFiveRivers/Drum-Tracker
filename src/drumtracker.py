@@ -8,30 +8,82 @@ import torchaudio.transforms as T
 
 class DrumTracker():
     def __init__(self, loop_path: str):
+        # Load in drum loop
         self.loop, self.loop_rate = librosa.load(loop_path, sr=None)
 
-        self.class_mapping = {
+        # Initialize models and functions
+        self._init_model()
+        self._init_funcs()
+
+        # Define class map for prediction and midi mapping
+        self.class_map = {
             0 : ['snare', 71],
             1 : ['hat', 70],
             2 : ['kick', 72]
         }
+    
 
-
-    def _model_init(self):
-        
-
-
-    def _get_midi(self):
+    def get_midi(self):
         oenv, onsets = self._detect_onsets()
         self.chop_dict = self._extract_chops(onsets)
 
-    
+        for chop in self.chop_dict['chops']:
+            map_value = self.class_map[self._predict_chop(chop)]
+            self.chop_dict['labels'].append(map_value[0])
+            self.chop_dict['notes'].append(map_value[1])
 
-    def _detect_onsets(self):
+
+    def _init_model(self):
+        """Initializes classifier model
+        """
+
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.model = Model_02()
+        if device == 'cuda':
+            self.model.load_state_dict(torch.load('models/model_02.pt'))
+        else:
+            self.model.load_state_dict(torch.load(
+                'models/model_02.pt',
+                map_location=torch.device('cpu')
+        ))
+            
+    
+    def _init_funcs(self):
+        """Initializes TorchAudio Transform Functions
+        """
+
+        self.power_to_db = T.AmplitudeToDB(
+            stype = "amplitude",
+            top_db = 80
+        )
+        self.resample = T.Resample(
+            orig_freq = self.loop_rate,
+            new_freq = 16000
+        )
+        self.mel_spec_trans = T.MelSpectrogram(
+            sample_rate = 16000,
+            n_fft = 256,
+            hop_length = 256 // 8,
+            n_mels = 256
+        )
+
+
+    def _detect_onsets(self) -> tuple[np.ndarray, np.ndarray]:
+        """Detects onset peaks in a sample loop.
+
+        Returns
+        -------
+        oenv : np.ndarray
+            Onset strength envelope.
+        onsets : np.ndarray
+            Locations of onset peaks in terms of samples.
+        """
+
         # Get onset strength envelope
         oenv = librosa.onset.onset_strength(
             y = self.loop,
-            sr = self.loop_rate, hop_legnth=1024
+            sr = self.loop_rate,
+            hop_legnth = 1024
         )
 
         # Get onset frames
@@ -47,6 +99,19 @@ class DrumTracker():
     
 
     def _extract_chops(self, onsets: list) -> dict:
+        """Extracts instrument chops from a sample loop.
+
+        Parameters
+        ----------
+        onsets : list
+            Location of onset peaks in terms of samples.
+
+        Returns
+        -------
+        dict
+            Properties of the chops.
+        """
+
         chop_dict = {
             'chops': [],
             'lengths': [],
@@ -74,11 +139,52 @@ class DrumTracker():
         return chop_dict
     
 
-    def _process_chops(self):
-        resample = T.Resample(orig_freq = self.loop_rate, new_freq = 16000)
+    def _predict_chop(self, chop: torch.Tensor) -> int:
+        """Predicts class of chop
+
+        Parameters
+        ----------
+        chop : torch.Tensor
+            Chop of loop sample to predict.
+
+        Returns
+        -------
+        int
+            Prediction result from model.
+        """
+
+        preds = np.empty((0, 3), float)
+        chunks = self._segment(self._to_mono(self.resample(torch.tensor(chop))))
+        self.model.eval()
+        with torch.no_grad():
+            for chunk in chunks[:8]:
+                if self.get_avg_db(chunk) > -80:
+                    logits = self.model(
+                        self.mel_spec_trans(chunk).unsqueeze(0).unsqueeze(0)
+                    )
+                    preds = np.append(
+                        preds,
+                        torch.softmax(logits, dim=1).numpy(),
+                        axis = 0
+                    )
+
+        return np.mean(preds, axis=0).argmax()
 
 
-    def _stereo_to_mono(self, signal: torch.Tensor) -> torch.Tensor:
+    def _to_mono(self, signal: torch.Tensor) -> torch.Tensor:
+        """Converts multi-channel audio to mono.
+
+        Parameters
+        ----------
+        signal : torch.Tensor
+            Audio signal to convert.
+
+        Returns
+        -------
+        torch.Tensor
+            Mono audio signal.
+        """
+
         if len(signal.shape) > 1 and signal.shape[0] > 1:
                 return(torch.mean(signal, dim=0, keepdim=True))
         else:
@@ -86,6 +192,20 @@ class DrumTracker():
         
     
     def _segment(self, signal: torch.Tensor, chunk_length: int = 160) -> list:
+        """Segments audio into chunks.
+
+        Parameters
+        ----------
+        signal : torch.Tensor
+            Audio signal to segment.
+        chunk_length : int, optional
+            Length of chunks in samples, by default 160
+
+        Returns
+        -------
+        list
+            List of segmented chunks.
+        """
         chunks = torch.split(signal, chunk_length)
 
         return chunks
@@ -112,18 +232,3 @@ class DrumTracker():
         signal_db = power_to_db(signal)
 
         return(round(float(torch.mean(signal_db.squeeze(0))), 4))
-    
-
-    def _mel_spec_trans(self, signal: torch.Tensor):
-        # Hyperparameters for mel spectrogram transformation
-        N_FFT = 256
-        HOP_LEN = N_FFT // 8
-        N_MELS = 256
-
-        # PyTorch transform function for mel spectrogram
-        mel_spec_trans = T.MelSpectrogram(
-            sample_rate = 16000,
-            n_fft = N_FFT,
-            hop_length = HOP_LEN,
-            n_mels = N_MELS
-        )
