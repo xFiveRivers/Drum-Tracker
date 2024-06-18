@@ -23,7 +23,7 @@ class DrumTracker():
     
 
     def get_midi(self):
-        """
+        """Processes drum loop to extract MIDI.
         """
         # Get loop file location from user
         loop_path = input('Enter the path to the drum loop: ')
