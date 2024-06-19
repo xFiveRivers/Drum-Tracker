@@ -10,7 +10,36 @@ warnings.filterwarnings('ignore')
 
 
 class DrumTracker():
+    """Class containing all operations for DrumTracker.
+
+    Methods
+    -------
+    get_midi()
+        Processes drum loop to extract MIDI.
+    _init_model()
+        Initializes the classifier model.
+    _init_funcs()
+        Initializes TorchAudio transform functions.
+    _detect_onsets()
+        Detects onset peaks in a sample loop.
+    _extract_chops(onsets)
+        Extracts instrument chops from a sample loop.
+    _predict_chop(chop)
+        Predicts the class of a chop.
+    _to_mono(signal)
+        Converts multi-channel audio to mono.
+    _segment(signal, chunk_length)
+        Segments audio into chunks.
+    _get_avg_db(signal)
+        Returns the average decibel level of a signal.
+    _transcribe_midi()
+        Transcribes and creates a MIDI file.
+    """
+
     def __init__(self):
+        """Initializes model and class map for processing.
+        """
+        
         # Initialize model
         self._init_model()
 
@@ -50,7 +79,7 @@ class DrumTracker():
 
 
     def _init_model(self):
-        """Initializes classifier model
+        """Initializes classifier model.
         """
 
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -65,7 +94,7 @@ class DrumTracker():
             
     
     def _init_funcs(self):
-        """Initializes TorchAudio Transform Functions
+        """Initializes TorchAudio transform functions.
         """
 
         self.power_to_db = T.AmplitudeToDB(
@@ -157,7 +186,7 @@ class DrumTracker():
     
 
     def _predict_chop(self, chop: torch.Tensor) -> int:
-        """Predicts class of chop
+        """Predicts the class of a chop.
 
         Parameters
         ----------
