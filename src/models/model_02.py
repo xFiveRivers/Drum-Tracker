@@ -4,6 +4,14 @@ from torchsummary import summary
 
 
 class Model_02(nn.Module):
+    """Class for Model_02 for drum classification.
+
+    Methods
+    -------
+    forward(X)
+        Torch forward function for running data through the model.
+    
+    """
 
     def __init__(self, n_input: int = 1, n_classes: int = 3):
         super().__init__()
@@ -56,6 +64,19 @@ class Model_02(nn.Module):
 
 
     def forward(self, X):
+        """Torch forward function for running data through the model.
+
+        Parameters
+        ----------
+        X : torch.Tensor
+            Tensor of the training data of shape (n, 1, 256, 6) where n is
+            the number of samples in a batch.
+
+        Returns
+        -------
+        logits : torch.Tensor
+            Raw prediction logits from the model.
+        """
         output = self.dropout(self.conv2(self.conv1(X)))
         logits = self.dense(output)
 
@@ -63,6 +84,8 @@ class Model_02(nn.Module):
     
 
     def get_name(self):
+        """Returns the name of the model.
+        """
         return('model_02')
 
 
