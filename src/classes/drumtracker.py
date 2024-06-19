@@ -25,6 +25,7 @@ class DrumTracker():
     def get_midi(self):
         """Processes drum loop to extract MIDI.
         """
+
         # Get loop file location from user
         loop_path = input('Enter the path to the drum loop: ')
 
@@ -222,6 +223,7 @@ class DrumTracker():
         list
             List of segmented chunks.
         """
+
         chunks = torch.split(signal, chunk_length)
 
         return chunks
@@ -240,6 +242,7 @@ class DrumTracker():
         float
             Average decibel level of signal.
         """
+
         power_to_db = T.AmplitudeToDB(stype="amplitude", top_db=80)
 
         if len(signal.shape) == 1:
@@ -253,6 +256,7 @@ class DrumTracker():
     def _transcribe_midi(self):
         """Transcribes and creates a MIDI file.
         """
+        
         file_path = input('Enter the desired path of the ouptut midi file: ')
 
         if input('Do you know the tempo (bpm) of the loop? [yes/no]: ') == 'yes':
