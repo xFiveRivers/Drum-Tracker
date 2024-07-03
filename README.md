@@ -12,7 +12,7 @@ A command-line drum loop MIDI transcription program.
 
 The `drum-tracker` environment needs to be installed in a few steps as `PyTorch` and it's components can cause conflicts and issues during installation.
 
-1) Install the conda envrioment by running the following command in the root folder of the repository:
+1) Install the conda environment by running the following command in the root folder of the repository:
 
 ```
 conda env create -f env.yml
@@ -34,12 +34,12 @@ pip install torchsummary torchmetrics
 
 ## **Usage**
 
-1) The pipeline works on the basis of short drum-loops (maximum 10-15 seconds). For added organization youu can place the drum-loop in the `data` folder.
+1) The pipeline works on the basis of short drum-loops (maximum 10-15 seconds). For added organization you can place the drum-loop in the `data` folder.
 
 2) Open a new terminal located at the root of the repository and activate the `drum-tracker` environment:
 
 ```
-conda activate drum-traker
+conda activate drum-tracker
 ```
 
 3) Run the program using the following command:
@@ -66,7 +66,7 @@ data/midi_files/test_midi.mid
 
 ## **Limitations**
 
-1) The classifier was only trained on old-school boom-bap type drums, specifically hi-hats, kicks, and snares. That is to say ther instruments (such as toms, rides, crashes, etc) will not be classified accurately and it will have a hard time with drum hits from other genres.
+1) The classifier was only trained on old-school boom-bap type drums, specifically hi-hats, kicks, and snares. That is to say that other percussion instruments (such as toms, rides, crashes, etc) will not be classified accurately and it will have a hard time with drum hits from other genres.
 
 2) When the drum-loop has multiple instruments playing at the same time, it will only detect one. For example if a kick and hi-hat are played, only the kick will be detected and the hi-hat hit will not be in the MIDI file. This is a limitation that will be improved in future revisions.
 
@@ -76,10 +76,10 @@ data/midi_files/test_midi.mid
 
 * Creating an audio classification model using `PyTorch` and `TorchAudio`
 * Exploratory data analysis (EDA) and audio signal data engineering with `TorchAudio`, `Librosa`, and `MatPlotLib`
-* MIDI file transcription in `Pyhon` using `MIDIutil`
+* MIDI file transcription in `Python` using `MIDIutil`
 
 ## **Background**
 
 Drum track and timing characteristics differ between genres of music. Electronic dance music (EDM) has typically has stiffly quantized percussion hits while jazz drummers have their own inherent swing and movement in their timing. My passion lies within hip-hop, specifically boom-bap with its analogue drum samples and organic swing from playing samples on a sampler.
 
-As a music producer, I've always been interested in underlying patterns and characterisitics of classic drummers that hip-hop songs sampled. When making a beat, the drums are the foundation and backbone of the track from which the instruments ride on. When classic hip-hop producers lay down drums for their tracks, they typically took a drum loop (a section of a song where only the drums were being played) and segmented it into small chops for each instrument. One chop could be a hi-hat, another a kick, and another a snare. They would then load these samples into a sampler and play their own drum pattern using the samples extracted from the original loop.
+As a music producer, I've always been interested in underlying patterns and characteristics of classic drummers that hip-hop songs sampled. When making a beat, the drums are the foundation and backbone of the track from which the instruments ride on. When classic hip-hop producers lay down drums for their tracks, they typically took a drum loop (a section of a song where only the drums were being played) and segmented it into small chops for each instrument. One chop could be a hi-hat, another a kick, and another a snare. They would then load these samples into a sampler and play their own drum pattern using the samples extracted from the original loop.
